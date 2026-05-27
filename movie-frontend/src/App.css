@@ -1,0 +1,44 @@
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #111;
+  color: white;
+}
+
+.container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.form {
+  background: #222;
+  padding: 30px;
+  border-radius: 10px;
+  width: 300px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form input {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+}
+
+.form button {
+  padding: 10px;
+  border: none;
+  background: crimson;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.form a {
+  color: cyan;
+  text-decoration: none;
+}
