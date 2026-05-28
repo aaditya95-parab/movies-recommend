@@ -25,20 +25,26 @@ function Dashboard() {
 
     try {
 
+      console.log("🔍 Dashboard: Checking localStorage for user...");
       const storedUser =
         JSON.parse(localStorage.getItem("user"));
 
+      console.log("📦 Dashboard: Retrieved user:", storedUser);
+
       if (!storedUser) {
 
+        console.warn("⚠️ Dashboard: No user found in localStorage. Redirecting to login...");
         navigate("/");
 
       } else {
 
+        console.log("✅ Dashboard: User authenticated. Loading movies...");
         setUser(storedUser);
       }
 
-    } catch {
+    } catch (error) {
 
+      console.error("❌ Dashboard: Error parsing user from localStorage:", error);
       localStorage.removeItem("user");
 
       navigate("/");
