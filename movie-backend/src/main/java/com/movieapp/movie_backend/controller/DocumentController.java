@@ -1,6 +1,9 @@
 package com.movieapp.movie_backend.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,21 +15,27 @@ import com.movieapp.movie_backend.service.DocumentService;
 
 @RestController
 @RequestMapping("/api/documents")
-@CrossOrigin(origins = "http://localhost:5174")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
 public class DocumentController {
+
+    private static final Logger logger = LoggerFactory.getLogger(DocumentController.class);
 
     @Autowired
     private DocumentService service;
 
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String uploadFile(
 
             @RequestParam("title") String title,
 
             @RequestParam("file") MultipartFile file
 
-    ) {
-        System.out.println("Controller hit")
+    ) 
+    {
+        logger.info("Controller hit for uploadFile. title={}, fileName={}, size={}",
+            title,
+            file != null ? file.getOriginalFilename() : null,
+            file != null ? file.getSize() : null);
         return service.uploadFile(title, file);
     }
 }

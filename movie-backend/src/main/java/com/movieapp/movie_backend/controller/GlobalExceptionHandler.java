@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.movieapp.movie_backend.dto.AuthResponse;
 
@@ -20,6 +21,13 @@ public class GlobalExceptionHandler {
         logger.error("Database access error", ex);
         AuthResponse resp = new AuthResponse(false, "Database unavailable", null, null);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(resp);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<AuthResponse> handleResponseStatus(ResponseStatusException ex) {
+        logger.warn("Request rejected: {}", ex.getReason(), ex);
+        AuthResponse resp = new AuthResponse(false, ex.getReason(), null, null);
+        return ResponseEntity.status(ex.getStatusCode()).body(resp);
     }
 
     @ExceptionHandler(Exception.class)

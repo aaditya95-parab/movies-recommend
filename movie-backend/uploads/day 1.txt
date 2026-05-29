@@ -1,0 +1,13 @@
+Date: 26/05/2026
+
+Title: Movie Recommendation Web Application
+
+Today, I worked on developing a Movie Recommendation Web Application using React and Spring Boot. First, I installed and configured the required software such as Node.js, Java JDK, VS Code, and Spring Boot. I created the frontend using React with Vite and installed Axios for API requests.
+
+Then, I created the backend project using Spring Boot and added the required dependencies. I created controller and service packages and connected the backend with the TMDB API using an API key.
+
+After configuring the API key in the application.properties file, I developed an API endpoint to fetch trending movie data. The backend was successfully tested on localhost.
+
+Next, I connected the React frontend with the Spring Boot backend using Axios. The application successfully displayed movie posters, movie titles, and ratings dynamically on the webpage.
+
+During development, I also solved issues related to Node.js setup, PowerShell execution policy, and TMDB API errors.
