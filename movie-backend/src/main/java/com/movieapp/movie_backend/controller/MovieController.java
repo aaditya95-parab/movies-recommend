@@ -12,7 +12,7 @@ import com.movieapp.movie_backend.service.MovieService;
 
 @RestController
 @RequestMapping("/movies")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5174")
 
 public class MovieController {
 
