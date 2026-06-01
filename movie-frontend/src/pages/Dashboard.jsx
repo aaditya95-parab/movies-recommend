@@ -7,7 +7,7 @@ import UploadForm from "../components/UploadForm";
 function Dashboard() {
 
   const navigate = useNavigate();
-
+  const [documents, setDocuments] = useState([]);
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [search, setSearch] = useState("");
@@ -15,10 +15,11 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedMovie, setSelectedMovie] = useState(null);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState("grid");
   const [user, setUser] = useState(null);
-
+  
   const MOVIES_PER_PAGE = 8;
 
   // ── Load User ──
@@ -91,6 +92,80 @@ function Dashboard() {
 
   }, []);
 
+  // ── Fetch Documents ──
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:8080/api/documents/all"
+      );
+
+      setDocuments(response.data);
+    } catch (error) {
+      console.error("Error fetching documents", error);
+    }
+  };
+
+  const handleDeleteDocument = async (id) => {
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this document?"
+  );
+
+  if (!confirmDelete) {
+    return;
+  }
+
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const username = storedUser?.username || storedUser?.userId || "Unknown User";
+
+  try {
+    await axios.delete(
+      `http://localhost:8080/api/documents/delete/${id}`,
+      {
+        params: {
+          username: username,
+        },
+      }
+    );
+
+    alert("Document deleted successfully");
+
+    fetchDocuments();
+  } catch (error) {
+    console.error("Error deleting document", error);
+    alert("Failed to delete document");
+  }
+};
+
+  const getFileIcon = (fileType) => {
+    const iconMap = {
+      'pdf': '📕',
+      'doc': '📘',
+      'docx': '📘',
+      'txt': '📄',
+      'xlsx': '📊',
+      'xls': '📊',
+      'csv': '📊',
+      'zip': '📦',
+      'rar': '📦',
+      'jpg': '🖼️',
+      'jpeg': '🖼️',
+      'png': '🖼️',
+      'gif': '🖼️',
+      'mp4': '🎬',
+      'mov': '🎬',
+      'avi': '🎬',
+      'mp3': '🎵',
+      'wav': '🎵',
+      'pptx': '🎪',
+      'ppt': '🎪'
+    };
+    return iconMap[fileType] || '📎';
+  };
+
   // ── Search + Filter ──
   useEffect(() => {
 
@@ -105,7 +180,6 @@ function Dashboard() {
           .includes(search.toLowerCase())
       );
     }
-
 
     // Filter
     if (selectedFilter !== "All") {
@@ -371,6 +445,83 @@ function Dashboard() {
       </div>
 
       <UploadForm />
+
+      <div className="documents-section-wrapper">
+        <div className="documents-header">
+          <div className="documents-title-group">
+            <span className="documents-icon">📄</span>
+            <div>
+              <h2 className="documents-title">Uploaded Documents</h2>
+              <p className="documents-subtitle">{documents.length} file{documents.length !== 1 ? 's' : ''} uploaded</p>
+            </div>
+          </div>
+          <div className="documents-count-badge">{documents.length}</div>
+        </div>
+
+        {documents.length === 0 ? (
+          <div className="documents-empty-state">
+            <div className="empty-icon">📭</div>
+            <h3>No documents uploaded yet</h3>
+            <p>Start by uploading your first document using the form above</p>
+          </div>
+        ) : (
+          <div className="documents-grid">
+            {documents.map((doc) => {
+              const fileType = doc.fileName.split('.').pop()?.toLowerCase() || 'file';
+              const fileIcon = getFileIcon(fileType);
+              const uploadDate = new Date(doc.uploadTime).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              });
+
+              return (
+                <div
+                      key={doc.id}
+                      className="document-card"
+                      onClick={() => setSelectedDocument(doc)}
+                    >
+                  <div className="document-card-header">
+                    <div className="document-icon-wrapper">
+                      <span className="document-type-icon">{fileIcon}</span>
+                      <span className="document-type-label">{fileType.toUpperCase()}</span>
+                    </div>
+                  </div>
+
+                  <div className="document-card-content">
+                    <h3 className="document-name" title={doc.fileName}>
+                      {doc.fileName}
+                    </h3>
+                    <p className="document-date">📅 {uploadDate}</p>
+                  </div>
+
+                  <div className="document-card-footer">
+                    <a
+                      href={`http://localhost:8080/api/documents/view/${doc.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="document-view-btn"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      👁 View
+                    </a>
+                    <button
+                      className="document-delete-btn"
+                      onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteDocument(doc.id);
+                    }}
+                    title="Delete this document"
+                  >
+                  🗑 Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* ── Loading ── */}
       {loading && (
@@ -692,7 +843,65 @@ function Dashboard() {
           🎬 MovieDash ©{" "}
           {new Date().getFullYear()}
         </p>
+{selectedDocument && (
+  <div
+    className="modal-overlay"
+    onClick={() => setSelectedDocument(null)}
+  >
+    <div
+      className="document-details-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        className="modal-close"
+        onClick={() => setSelectedDocument(null)}
+      >
+        ✕
+      </button>
 
+      <div className="document-details-header">
+        <span className="document-details-icon">📄</span>
+        <div>
+          <h2>{selectedDocument.title || selectedDocument.fileName}</h2>
+          <p>{selectedDocument.fileName}</p>
+        </div>
+      </div>
+
+      <div className="document-details-body">
+        <div className="document-detail-row">
+          <strong>Category:</strong>
+          <span>{selectedDocument.category || "Not provided"}</span>
+        </div>
+
+        <div className="document-detail-row">
+          <strong>Department:</strong>
+          <span>{selectedDocument.department || "Not provided"}</span>
+        </div>
+
+        <div className="document-detail-row">
+          <strong>Tags:</strong>
+          <span>{selectedDocument.tags || "Not provided"}</span>
+        </div>
+
+        <div className="document-description-box">
+          <strong>Description</strong>
+          <p>
+            {selectedDocument.description || "No description available."}
+          </p>
+        </div>
+
+        <a
+          href={`http://localhost:8080/api/documents/view/${selectedDocument.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="document-view-btn"
+        >
+          👁 Open Document
+        </a>
+      </div>
+    </div>
+  </div>
+)}
       </footer>
 
     </div>

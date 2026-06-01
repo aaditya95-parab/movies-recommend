@@ -39,3 +39,9 @@ Caused by: org.h2.mvstore.MVStoreException: The file is locked: D:/movie/movie-b
 	at org.h2.mvstore.SingleFileStore.open(SingleFileStore.java:81)
 	at org.h2.mvstore.MVStore.<init>(MVStore.java:286)
 	... 12 more
+2026-06-01 12:47:10.364799+05:30 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "CREATE USER [*]'Aaditya' IDENTIFIED BY '1234'"; expected "identifier"; SQL statement:
+CREATE USER 'Aaditya' IDENTIFIED BY '1234' [42001-224]
+2026-06-01 12:47:41.226271+05:30 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "CREATE ROLE Aaditya [*]WITH LOGIN PASSWORD '12345'"; SQL statement:
+CREATE ROLE Aaditya WITH LOGIN PASSWORD '12345' [42000-224]

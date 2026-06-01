@@ -1,6 +1,13 @@
 import React, { useRef, useState } from "react";
-import { FiUploadCloud, FiFile, FiCheckCircle, FiAlertCircle, FiLoader } from "react-icons/fi";
+import {
+  FiUploadCloud,
+  FiFile,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiLoader,
+} from "react-icons/fi";
 import "./UploadForm.css";
+
 
 function formatFileSize(bytes) {
   if (!bytes) return "0 B";
@@ -16,6 +23,11 @@ export default function UploadForm() {
   const fileInputRef = useRef(null);
 
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [department, setDepartment] = useState("");
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState("");
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -24,6 +36,10 @@ export default function UploadForm() {
 
   const resetForm = () => {
     setTitle("");
+    setCategory("");
+    setDepartment("");
+    setDescription("");
+    setTags("");
     setSelectedFile(null);
 
     if (fileInputRef.current) {
@@ -31,9 +47,13 @@ export default function UploadForm() {
     }
   };
 
-  const handleFileSelect = (file) => {
+  const clearMessages = () => {
     setErrorMessage("");
     setSuccessMessage("");
+  };
+
+  const handleFileSelect = (file) => {
+    clearMessages();
     setSelectedFile(file);
   };
 
@@ -46,14 +66,47 @@ export default function UploadForm() {
       return;
     }
 
+    if (!category.trim()) {
+      setErrorMessage("Please enter a document category.");
+      setSuccessMessage("");
+      return;
+    }
+
+    if (!department.trim()) {
+      setErrorMessage("Please enter a department.");
+      setSuccessMessage("");
+      return;
+    }
+
+    if (!description.trim()) {
+      setErrorMessage("Please enter a description.");
+      setSuccessMessage("");
+      return;
+    }
+
+    if (!tags.trim()) {
+      setErrorMessage("Please enter tags.");
+      setSuccessMessage("");
+      return;
+    }
+
     if (!selectedFile) {
       setErrorMessage("Please select a file to upload.");
       setSuccessMessage("");
       return;
     }
 
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const username = storedUser?.username || storedUser?.userId || "Unknown User";
+
     const formData = new FormData();
+
     formData.append("title", title);
+    formData.append("category", category);
+    formData.append("department", department);
+    formData.append("description", description);
+    formData.append("tags", tags);
+    formData.append("username", username);
     formData.append("file", selectedFile);
 
     try {
@@ -73,7 +126,7 @@ export default function UploadForm() {
           const data = await response.json();
           message = data?.message || message;
         } catch (e) {
-          // keep default
+          // keep default message
         }
 
         throw new Error(message);
@@ -113,7 +166,7 @@ export default function UploadForm() {
             <p className="upload-eyebrow">Document Upload</p>
             <h2>Send files to your movie dashboard</h2>
             <p className="upload-description">
-              Upload production notes, casting docs, or any supporting file into the Movie Informer backend.
+              Upload production notes, casting docs, reports, or any supporting file into the Movie Informer backend.
             </p>
           </div>
 
@@ -130,8 +183,7 @@ export default function UploadForm() {
               value={title}
               onChange={(event) => {
                 setTitle(event.target.value);
-                setErrorMessage("");
-                setSuccessMessage("");
+                clearMessages();
               }}
               placeholder="Enter document title"
               className="modern-input"
@@ -140,8 +192,72 @@ export default function UploadForm() {
             />
           </label>
 
+          <label className="field-group">
+            <span className="field-label">Category</span>
+            <input
+              type="text"
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value);
+                clearMessages();
+              }}
+              placeholder="Example: Report, Invoice, Script"
+              className="modern-input"
+              autoComplete="off"
+              disabled={loading}
+            />
+          </label>
+
+          <label className="field-group">
+            <span className="field-label">Department</span>
+            <input
+              type="text"
+              value={department}
+              onChange={(event) => {
+                setDepartment(event.target.value);
+                clearMessages();
+              }}
+              placeholder="Example: Production, HR, Finance"
+              className="modern-input"
+              autoComplete="off"
+              disabled={loading}
+            />
+          </label>
+
+          <label className="field-group">
+            <span className="field-label">Tags</span>
+            <input
+              type="text"
+              value={tags}
+              onChange={(event) => {
+                setTags(event.target.value);
+                clearMessages();
+              }}
+              placeholder="Example: movie, report, 2026"
+              className="modern-input"
+              autoComplete="off"
+              disabled={loading}
+            />
+          </label>
+
+          <label className="field-group field-group-full">
+            <span className="field-label">Description</span>
+            <textarea
+              value={description}
+              onChange={(event) => {
+                setDescription(event.target.value);
+                clearMessages();
+              }}
+              placeholder="Write a short description about this document"
+              className="modern-input modern-textarea"
+              disabled={loading}
+            />
+          </label>
+
           <div
-            className={`dropzone ${isDragging ? "dropzone-active" : ""} ${selectedFile ? "dropzone-filled" : ""}`}
+            className={`dropzone ${isDragging ? "dropzone-active" : ""} ${
+              selectedFile ? "dropzone-filled" : ""
+            }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -160,7 +276,13 @@ export default function UploadForm() {
               type="file"
               accept="*/*"
               className="hidden-file-input"
-              onChange={(event) => handleFileSelect(event.target.files && event.target.files[0] ? event.target.files[0] : null)}
+              onChange={(event) =>
+                handleFileSelect(
+                  event.target.files && event.target.files[0]
+                    ? event.target.files[0]
+                    : null
+                )
+              }
               disabled={loading}
             />
 
@@ -191,7 +313,8 @@ export default function UploadForm() {
               <div>
                 <h3>{selectedFile.name}</h3>
                 <p>
-                  {formatFileSize(selectedFile.size)} · {selectedFile.type || "Unknown file type"}
+                  {formatFileSize(selectedFile.size)} ·{" "}
+                  {selectedFile.type || "Unknown file type"}
                 </p>
               </div>
             </div>
