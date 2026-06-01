@@ -30,9 +30,9 @@ public class AuthService {
     private final long expirationMs;
 
     public AuthService(
-        DmsUserRepository userRepository,
-        @Value("${security.jwt.secret}") String secret,
-        @Value("${security.jwt.expiration-ms:86400000}") long expirationMs
+            DmsUserRepository userRepository,
+            @Value("${security.jwt.secret}") String secret,
+            @Value("${security.jwt.expiration-ms:86400000}") long expirationMs
     ) {
         this.userRepository = userRepository;
         this.secretBytes = secret.getBytes(StandardCharsets.UTF_8);
@@ -54,21 +54,65 @@ public class AuthService {
 
         try {
             String normalizedUsername = username.trim();
+
             DmsUser user = userRepository.findByUserId(normalizedUsername);
 
             if (user == null) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
             }
 
-            if (!Objects.equals(user.getPassword(), password)) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            if ("LOCKED".equalsIgnoreCase(user.getAccountStatus())) {
+                return new AuthResponse(
+                        false,
+                        "Account is locked due to 3 failed login attempts. Please contact admin.",
+                        null,
+                        user.getUserId()
+                );
             }
 
             if (!"ACTIVE".equalsIgnoreCase(user.getAccountStatus())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account inactive");
             }
 
+            if (!Objects.equals(user.getPassword(), password)) {
+
+                Integer currentAttempts = user.getFailedAttempts();
+                int attempts = currentAttempts == null ? 0 : currentAttempts;
+                attempts++;
+
+                user.setFailedAttempts(attempts);
+                logger.info("Wrong password for userId={}, failedAttempts={}", user.getUserId(), attempts);
+
+                if (attempts >= 3) {
+                    user.setAccountStatus("LOCKED");
+                    userRepository.saveAndFlush(user);
+
+                    return new AuthResponse(
+                            false,
+                            "Account locked due to 3 failed login attempts.",
+                            null,
+                            user.getUserId()
+                    );
+                }
+
+                userRepository.save(user);
+
+                return new AuthResponse(
+                        false,
+                        "Invalid password. Attempts left: " + (3 - attempts),
+                        null,
+                        user.getUserId()
+                );
+            }
+
+            // Successful login: reset failed attempts
+            user.setFailedAttempts(0);
+            user.setAccountStatus("ACTIVE");
+            userRepository.saveAndFlush(user);
+            logger.info("Successful login for userId={} reset failedAttempts to 0", user.getUserId());
+
             String token = generateToken(user.getUserId());
+
             logger.info("Login successful for userId={}", user.getUserId());
 
             AuthResponse response = new AuthResponse();
@@ -76,7 +120,9 @@ public class AuthService {
             response.setMessage("Login Successful");
             response.setToken(token);
             response.setUsername(user.getUserId());
+
             return response;
+
         } catch (DataAccessException ex) {
             logger.error("Database error during login", ex);
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Database unavailable");
@@ -88,10 +134,10 @@ public class AuthService {
         Date expiry = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
-            .subject(subject)
-            .issuedAt(now)
-            .expiration(expiry)
-            .signWith(Keys.hmacShaKeyFor(secretBytes))
-            .compact();
+                .subject(subject)
+                .issuedAt(now)
+                .expiration(expiry)
+                .signWith(Keys.hmacShaKeyFor(secretBytes))
+                .compact();
     }
 }

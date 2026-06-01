@@ -1,4 +1,5 @@
 package com.movieapp.movie_backend.entity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -18,12 +19,17 @@ public class DmsUser {
     @Column(name = "ACCOUNT_STATUS")
     private String accountStatus;
 
-    public DmsUser() {}
+    @Column(name = "FAILED_ATTEMPTS")
+    private Integer failedAttempts = 0;
 
-    public DmsUser(String userId, String password, String accountStatus) {
+    public DmsUser() {
+    }
+
+    public DmsUser(String userId, String password, String accountStatus, Integer failedAttempts) {
         this.userId = userId;
         this.password = password;
         this.accountStatus = accountStatus;
+        this.failedAttempts = failedAttempts;
     }
 
     public String getUserId() {
@@ -48,5 +54,13 @@ public class DmsUser {
 
     public void setAccountStatus(String accountStatus) {
         this.accountStatus = accountStatus;
+    }
+
+    public Integer getFailedAttempts() {
+        return failedAttempts;
+    }
+
+    public void setFailedAttempts(Integer failedAttempts) {
+        this.failedAttempts = failedAttempts;
     }
 }
